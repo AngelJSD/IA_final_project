@@ -3,11 +3,13 @@
 #include <random>
 #include <time.h>
 
-#define n 5
+#define n 10
 
 using namespace std;
 
 vector <vector <float> > Q,R;
+vector <int> obstacles;
+int goal, start;
 
 void qini(){
 
@@ -32,7 +34,8 @@ void qini(){
         for(int j=0; j<n*n; ++j){
             
             if( (i%n!=0 && j==i-1) || ((i+1)%n!=0 && j==i+1) || (i-n>=0 && j==i-n) || (i+n<n*n && j==i+n) )
-                R[i][j]=0;
+                //R[i][j]=0;
+                R[i][j]=-0.04;
             else
                 R[i][j]=-1;
         }
@@ -42,7 +45,7 @@ void qini(){
 
 void setGoal(int x, int y){
 
-    int goal=x*n+y;
+    goal=x*n+y;
 
     if(goal%n !=0) R[goal-1][goal]=100;
     if((goal+1)%n!=0) R[goal+1][goal]=100;
@@ -52,6 +55,44 @@ void setGoal(int x, int y){
     R[goal][goal]=100;
 
     cout<<"Goal seteado"<<endl;
+}
+
+void setStart(int x, int y){
+
+    start=x*n+y;
+
+    cout<<"Start seteado"<<endl;
+}
+
+void setObstacle(int x, int y){
+
+    int obstacle=x*n+y;
+
+    if(obstacle%n !=0) R[obstacle-1][obstacle]=-10;
+    if((obstacle+1)%n!=0) R[obstacle+1][obstacle]=-10;
+    if(obstacle-n>=0) R[obstacle-n][obstacle]=-10;
+    if(obstacle+n<n*n) R[obstacle+n][obstacle]=-10;
+
+    R[obstacle][obstacle]=-10;
+    obstacles.push_back(obstacle);
+    cout<<"Obstacle seteado"<<endl;
+}
+
+void setRandObstacle(){
+
+    int obstacle=rand() % (n*n);
+
+    while(obstacle==goal) obstacle=rand() % (n*n);
+    while(obstacle==start) obstacle=rand() % (n*n);
+
+    if(obstacle%n !=0) R[obstacle-1][obstacle]=-10;
+    if((obstacle+1)%n!=0) R[obstacle+1][obstacle]=-10;
+    if(obstacle-n>=0) R[obstacle-n][obstacle]=-10;
+    if(obstacle+n<n*n) R[obstacle+n][obstacle]=-10;
+
+    R[obstacle][obstacle]=-10;
+    obstacles.push_back(obstacle);
+    cout<<"Obstacle seteado"<<endl;
 }
 
 float maxi(int state){
@@ -143,6 +184,12 @@ int qlearning_step(int state, int ini, int goal){
 
     int next_state;
     if(state==goal) state=ini;
+    for(int i=0; i<obstacles.size(); ++i){
+        if(state==obstacles[i]) {
+            state=ini;
+            break;
+        }
+    }
 
     vector<int> posibles;
     for(int i=0; i<n*n; ++i){
@@ -168,7 +215,7 @@ int qlearning_step(int state, int ini, int goal){
         next_state = new_posibles[rand() % new_posibles.size()];
     //}
     Q[state][next_state] = R[state][next_state] + 0.8*maxi(next_state);
-
+    //Q[state][next_state] += 0.7*(R[state][next_state] + 0.9*maxi(next_state) - Q[state][next_state]);
     return next_state;
 
     //cout<<"estado: "<<state<<" actualizo: "<<Q[state][next_state]<<endl;
